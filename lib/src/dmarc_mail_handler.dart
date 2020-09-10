@@ -18,10 +18,16 @@ class IncomingMailHandler {
   final File outputCsvFile;
 
   Future<void> handle(Stream<List<int>> input) async {
+    // final content = await input
+    //     .transform(const Utf8Decoder())
+    //     .fold<StringBuffer>(
+    //         StringBuffer(), (previous, element) => previous..write(element));
     final content = await input
         .transform(const Utf8Decoder())
-        .fold<StringBuffer>(
-            StringBuffer(), (previous, element) => previous..write(element));
+        .transform(const LineSplitter())
+        .join('\r\n');
+    // .fold<StringBuffer>(
+    //     StringBuffer(), (previous, element) => previous..write(element));
     _logger.fine('Parsing message ...');
     final message = MimeMessage();
     message.bodyRaw = content.toString();
@@ -43,10 +49,21 @@ class IncomingMailHandler {
     await out.close();
   }
 
+  void debugPart(MimePart part, {int depth = 0}) {
+    final header = part.getHeaderContentDisposition();
+    _logger.fine('${'  ' * depth} $header');
+    if (part.parts != null) {
+      for (final p in part.parts) {
+        debugPart(p, depth: depth + 1);
+      }
+    }
+  }
+
   Uint8List _findXmlContent(MimeMessage message) {
     final ci =
         message.findContentInfo(disposition: ContentDisposition.attachment);
     if (ci.length != 1) {
+      debugPart(message);
       _logger.severe('Expected one attachment, got ${ci.length}: $ci');
       throw StateError('Expected one attachment, got ${ci.length}');
     }

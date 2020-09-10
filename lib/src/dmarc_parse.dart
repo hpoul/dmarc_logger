@@ -42,8 +42,8 @@ class DmarcParser {
       checkState(authResult.length == 1, message: 'only auth result');
 
       final authResults = record.findElements('auth_results').single;
-      final dkim = AuthResult.fromXml(authResults.findElements('dkim').single);
-      final spf = AuthResult.fromXml(authResults.findElements('spf').single);
+      final dkim = AuthResult.fromXml(authResults.opt('dkim'));
+      final spf = AuthResult.fromXml(authResults.opt('spf'));
 
       final tmp = <String, Object>{
         ...metadata.toJson(),

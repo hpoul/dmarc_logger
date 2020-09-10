@@ -13,6 +13,19 @@ extension XmlNodeExt on XmlNode {
     }
   }
 
+  XmlElement opt(String name) {
+    final els = findElements(name);
+    final it = els.iterator;
+    if (it.moveNext()) {
+      final val = it.current;
+      if (it.moveNext()) {
+        throw StateError('Expected at most 1 element for $name in $this');
+      }
+      return val;
+    }
+    return null;
+  }
+
   String textNodeRecursive(String name) => findAllElements(name).first.text;
 
   DateTime dateNode(String name) {

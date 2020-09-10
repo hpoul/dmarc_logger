@@ -66,10 +66,20 @@ abstract class AuthResult with _$AuthResult {
 
   factory AuthResult.fromJson(Map<String, dynamic> json) =>
       _$AuthResultFromJson(json);
+
   factory AuthResult.fromXml(XmlElement el) {
+    if (el == null) {
+      return AuthResult.NULL;
+    }
     return AuthResult(
       domain: el.textNode('domain'),
       result: el.textNode('result').toDkimResult(),
     );
   }
+
+  static const ABSENT_STRING = '(absent)';
+  static const NULL = AuthResult(
+    domain: ABSENT_STRING,
+    result: DkimResult.none,
+  );
 }
