@@ -1,0 +1,61 @@
+Delivered-To: herbert.poul@gmail.com
+Received: by 2002:a05:6504:14d9:0:0:0:0 with SMTP id u25csp3319452ltp;
+        Mon, 7 Sep 2020 01:58:10 -0700 (PDT)
+X-Google-Smtp-Source: ABdhPJzJDFr1HTKL4t5No2DBVVCEWU94P7PGm1nINBkV1IReyH5sLsze8sIgKwlkcM0w4AoikuXgwbeyoxM=
+X-Received: by 2002:a1c:b608:: with SMTP id g8mr20724590wmf.106.1599469088606;
+        Mon, 07 Sep 2020 01:58:08 -0700 (PDT)
+Authentication-Results: mx.google.com;
+       spf=pass (google.com: best guess record for domain of noreply@dmarc.yahoo.com designates 66.163.191.20 as permitted sender) smtp.mailfrom=noreply@dmarc.yahoo.com;
+       dkim=pass header.i=@yahoo.com header.s=s2048 header.b=oCPKzS55
+Received-SPF: pass (google.com: best guess record for domain of noreply@dmarc.yahoo.com designates 66.163.191.20 as permitted sender) client-ip=66.163.191.20;
+Received: by 2002:a1c:a90c:: with POP3 id s12mf12734200wme.1;
+        Mon, 07 Sep 2020 01:58:08 -0700 (PDT)
+X-Gmail-Fetch-Info: herbert@poul.at 6 services.tapo.at 995 herbert
+Return-Path: <noreply@dmarc.yahoo.com>
+X-Original-To: herbert.dmarc.report@authpass.app
+Delivered-To: herbert.dmarc.report@authpass.app
+Received: from sonic328-45.consmr.mail.ne1.yahoo.com (sonic328-45.consmr.mail.ne1.yahoo.com [66.163.191.20])
+	by services.tapo.at (Postfix) with ESMTPS id 070175CF58
+	for <herbert.dmarc.report@authpass.app>; Mon,  7 Sep 2020 10:56:44 +0200 (CEST)
+Authentication-Results: services.tapo.at;
+	dkim=pass (2048-bit key; unprotected) header.d=yahoo.com header.i=@yahoo.com header.b="oCPKzS55";
+	dkim-atps=neutral
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1599469002; bh=cUG6hEGwfrWqNnYx00p73AF5E/7BGvn15dO7g2ZieZM=; h=Date:From:To:Subject:From:Subject; b=oCPKzS55T5udKo6hLQt1PYqP9voz5rMu+yVN5YqzKnta6rsIPFtj3KEMoOMc0DBZj3I2M/sao4oBPJY3lHy/js4ukN0nAiJp5T+OlB0s24pwJ5WGOfQN3ojh+E7rahtdJT/ydiYMGPxE0aqXs+R+i3FFF3py4D3WryBNAKPSVQrgA1fyaeXXWLGbqy9ITbGjTmaTWN5v4TAykXDMZJwcu0fM5WdPHn4TpQ/HGvb7+OQbfv2XX15bZup6liAExpiH3M3a9JyN0yif6L6WWMkt1EkMk0r+g6DKudMoEClRqdZ+Z9CxhhWhCtVS0M4ilFysAEGBRZSIfGxoU+wbyNBC5Q==
+Received: from sonic.gate.mail.ne1.yahoo.com by sonic328.consmr.mail.ne1.yahoo.com with HTTP; Mon, 7 Sep 2020 08:56:42 +0000
+Content-Transfer-Encoding: binary
+Content-Type: multipart/mixed; boundary="_----------=_159946900126686186"
+MIME-Version: 1.0
+X-Mailer: MIME::Lite 3.030 (F2.84; T1.38; A2.12; B3.13; Q3.13)
+Date: Mon, 7 Sep 2020 01:56:41 -0700
+From: noreply@dmarc.yahoo.com
+To: herbert.dmarc.report@authpass.app
+Subject: Report Domain: authpass.app Submitter: yahoo.com Report-ID: <1599441404.141174>
+Message-Id: <1599469001.913193@dmarc.yahoo.com>
+
+This is a multi-part message in MIME format.
+
+--_----------=_159946900126686186
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+
+This is an aggregate report from Oath
+--_----------=_159946900126686186
+Content-Disposition: attachment; filename="yahoo.com!authpass.app!1599350400!1599436799.xml.gz"
+Content-Transfer-Encoding: base64
+Content-Type: application/gzip; name="yahoo.com!authpass.app!1599350400!1599436799.xml.gz"
+
+H4sIAMn1VV8AA5VUy5LbIBA8J1/h7AeAsOVsXEXYXPMJOakwjGxqxSMIebN/
+n8HCSOtN1VZOQk3TM92MxJ/+2GFzgTga774/MNI8PIlPn3kPoI9SPeN6s+ER
+go+ps5CklkleQYR9PHVOWhC/5Nn7L5ufThFOK1pYYKUZRPBjsnJMEH9oK6Mi
+r/kMUd5yOjMKvdQyWrD94dC2rG1awlrGHltOl83Cxnagi9KdbuUQO8LJuOvp
+3b5pm4bTGakEcEV89/XxcMD6rurRO8Fa8o13Hvxg1GsXpuNgxjMs7Xi04oSc
+0jnIcSQyBJScwUKR+tlYETmdFzd0DP0VzM+CBfF7kthKMg44DRVWSbDsKi/m
+Hv/ZDiapfKytRf+yJDD6KSroTBDbZk+2DSNs1xD2jXG6bFW28pNLYsvpvKh4
+KQsXOUwYm647OQkz4pWbhGMlnM8G1siamFPIYSFjCWTuErPocTSwqZrKyu59
+Xbyr6pEbDRhcb3Cyl5NnkBpi10dv7+5ovXNTey/B86EuwjgNaSV73/fHU1Am
+PesU7+VlMflGlK8DWCrk7wYvjbxo1WyJVXq4EAfp/4utpo6+85j5ZZI4Xf0Y
+/gKIivAiPAQAAA==
+
+--_----------=_159946900126686186--
+

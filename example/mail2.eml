@@ -1,0 +1,74 @@
+Delivered-To: herbert.poul@gmail.com
+Received: by 2002:a05:6504:14d9:0:0:0:0 with SMTP id u25csp1115178ltp;
+        Thu, 10 Sep 2020 02:43:04 -0700 (PDT)
+X-Google-Smtp-Source: ABdhPJwlV/xqX4vHP7IcoJJPL0kX2BlBc5BwR5PUF4d3znfL6Y8kPOeW6FPCB18Gs4pnjzvLtWNLafx0ZN8=
+X-Received: by 2002:a50:8d57:: with SMTP id t23mr8519063edt.308.1599730984270;
+        Thu, 10 Sep 2020 02:43:04 -0700 (PDT)
+Authentication-Results: mx.google.com;
+       spf=pass (google.com: domain of noreply-dmarc-support@google.com designates 209.85.160.201 as permitted sender) smtp.mailfrom=noreply-dmarc-support@google.com;
+       dkim=pass header.i=@google.com header.s=20161025 header.b=wPoguWt7
+Received-SPF: pass (google.com: domain of noreply-dmarc-support@google.com designates 209.85.160.201 as permitted sender) client-ip=209.85.160.201;
+Received: by 2002:a05:6402:31b3:: with POP3 id dj19mf6926933edb.6;
+        Thu, 10 Sep 2020 02:43:04 -0700 (PDT)
+X-Gmail-Fetch-Info: herbert@poul.at 6 services.tapo.at 995 herbert
+Return-Path: <noreply-dmarc-support@google.com>
+X-Original-To: herbert.dmarc.report@authpass.app
+Delivered-To: herbert@authpass.app
+Received: from mail-qt1-f201.google.com (mail-qt1-f201.google.com [209.85.160.201])
+	by services.tapo.at (Postfix) with ESMTPS id 81DE45CEAD
+	for <herbert.dmarc.report@authpass.app>; Thu, 10 Sep 2020 11:33:07 +0200 (CEST)
+Authentication-Results: services.tapo.at;
+	dkim=pass (2048-bit key; unprotected) header.d=google.com header.i=@google.com header.b="wPoguWt7";
+	dkim-atps=neutral
+Received: by mail-qt1-f201.google.com with SMTP id f12so3732340qtq.5
+        for <herbert.dmarc.report@authpass.app>; Thu, 10 Sep 2020 02:33:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20161025;
+        h=mime-version:date:message-id:subject:from:to:content-disposition
+         :content-transfer-encoding;
+        bh=H9qN7afBbh13/7DlGiI2zibg9rY3T8A+WtXTBEKi6qA=;
+        b=wPoguWt7eolQ/8uiyf8DIyj+R0J6DWAz5iDs3RwgwwcXEsIRqHu4B3A5wfPsaOfiAu
+         UXmYFwLwbd9qx4liwbOGy/gONyltASU+a4hzHkllowNDjyDLzbmecdSHTsztDTMVwPql
+         mFakOFfgMvdx8a+zyKB/Ghg8zxr/rOv2aURMxFUXMBg1mCJgqPsBmZ68zd2PGDwiXTgV
+         RrIuj1rzrMLv4MIS3i9mgcxvWQPOPGI2c3QXg3u6m+/Z81X4cOBQHveOwvwwlka9gcrK
+         PCwVpxz3Qr1UilwT4DHbSEqwoZELWlr77rUsiPzenywZK3yZ1fEeYqETdh0BkKN97lL3
+         IldQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:date:message-id:subject:from:to
+         :content-disposition:content-transfer-encoding;
+        bh=H9qN7afBbh13/7DlGiI2zibg9rY3T8A+WtXTBEKi6qA=;
+        b=pt8BquAZaFRkEZankqec4eRycgfro2Wv1yswKZX95CB4ngP3exoWJf7bEL7S9/M1Wa
+         NN8z1ogbqWgt0s3OljBZTsEdgZSprNYaC27HzSynRRySd706Cujgp2PdhXigoc8fPh8P
+         Pwrd55fqXWUZ4iJdMq06A8a8d+RZXUmC+yqCVJgTMt6W2aFKou+Qc5y5GBmk8QYQrPua
+         eh3RpjCfGshBYzuTX6Sc9EhtTXknH7elC+6FFbnEf7kY5XMEN4Fb58gqG8QrzbQeB8rx
+         mqHpwPMWVuz1ym9YQMH0hMFlYvUcMgugrca5PCPms5yhwxqQv/7ZXID1gkO8ktI/jlsZ
+         IuZg==
+X-Gm-Message-State: AOAM533ceRgYPXgwP0WEhuT8aHLprdPlcJ6QJX+tJ/12OOsLhJuHGH5Z
+	rgGAck6IIdacCyLO+lmG5A==
+MIME-Version: 1.0
+X-Received: by 2002:a37:8ec3:: with SMTP id q186mr6889016qkd.233.1599730385346;
+ Thu, 10 Sep 2020 02:33:05 -0700 (PDT)
+Date: Wed, 09 Sep 2020 16:59:59 -0700
+Message-ID: <12882976855644525401@google.com>
+Subject: Report domain: authpass.app Submitter: google.com Report-ID: 12882976855644525401
+From: noreply-dmarc-support@google.com
+To: herbert.dmarc.report@authpass.app
+Content-Type: application/zip; 
+	name="google.com!authpass.app!1599609600!1599695999.zip"
+Content-Disposition: attachment; 
+	filename="google.com!authpass.app!1599609600!1599695999.zip"
+Content-Transfer-Encoding: base64
+
+UEsDBAoAAAAIADJJKlHUG4i+2gEAACwEAAAxAAAAZ29vZ2xlLmNvbSFhdXRocGFzcy5hcHAhMTU5
+OTYwOTYwMCExNTk5Njk1OTk5LnhtbI1Ty3KcMBC8+yu29r5owQuBlCznlC9IzpRWDKzKICmS8OPv
+M7LEI7YPqaIWbc9Mz3RroI+v03h4BuukVg/HPDsfD6CE7qQaHo6/f/081cfDI7ujPUB35eKJ3R0O
+1ILR1rcTeN5xzwOGqLZDq/gEbNB6GCETeqJkBWMOTFyOTGlkGN9O3cStOLnZBLof+7KYl2peveWt
+0Mpz4Vupes1u3hv3nZBUmm2lhBOu3AtYUlyqqqzPyPW5PhInGbJjeVHXRfOtqsuyulzKorycc0q2
+eMxHrdBaroakBqErDFKxvGya6owPdovIEgfVxWiDPw3OohYy8i/b2m1vKjV6lOKtNfN1lO4G6yAa
+7VGMz/5muHMZNwb5IhgzePckJ2YpiYcEOtO/Y+EdIcP+zByH8FIBJSahzuAVBcAtiBGe5UFeOLyP
++9Vo6KjQdpnS6pfVB6dnK6CVhuX3dVac86woiiwv0eUttCQLPSvP7imJhwVOHeGZjzN61y2BYIh0
+RjvpcYnT5HtklxfM6HG1MGH1JUnuWfAyaO7XluTrnnhZizYqO0D3eomf0Fp2A96BbXurpw+XtI8k
+qk8ENJS0Ftw8+o1zN9b/bEBa8MCRdKU/q7RtCcjHhiE5XiQl24f/F1BLAQIKAAoAAAAIADJJKlHU
+G4i+2gEAACwEAAAxAAAAAAAAAAAAAAAAAAAAAABnb29nbGUuY29tIWF1dGhwYXNzLmFwcCExNTk5
+NjA5NjAwITE1OTk2OTU5OTkueG1sUEsFBgAAAAABAAEAXwAAACkCAAAAAA==
