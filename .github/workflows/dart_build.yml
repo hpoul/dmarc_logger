@@ -1,0 +1,31 @@
+name: Dart Build Exe
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+#    container:
+#      image:  google/dart:latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cedx/setup-dart@v2
+      with:
+        release-channel: dev
+    - name: Install dependencies
+      run: pub get
+    - name: compile
+      run: dart compile exe bin/dmarc_logger.dart -o dmarc_logger_linux.exe
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2.1.4
+      with:
+        # Artifact name
+        name: dmarc_logger_linux.exe
+        path: dmarc_logger_linux.exe
