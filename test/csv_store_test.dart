@@ -174,6 +174,21 @@ void main() {
       expect(file.readAsStringSync(), once);
     });
 
+    test('pads short lines under an already current header', () async {
+      final file = File('${temp.path}/gap.csv')
+        ..writeAsStringSync(
+          '${currentHeader.join(',')}\n'
+          '${List.filled(12, 'v').join(',')}\n',
+        );
+
+      expect(
+        await CsvStore(file: file).migrate(),
+        isA<Migrated>().having((o) => o.rows, 'rows', 1),
+      );
+      expect(readRows(file)[1], hasLength(currentHeader.length));
+      expect(await CsvStore(file: file).migrate(), isA<AlreadyCurrent>());
+    });
+
     test('creates a missing file with the current header', () async {
       final file = File('${temp.path}/missing.csv');
 

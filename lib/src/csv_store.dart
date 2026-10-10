@@ -223,9 +223,11 @@ class CsvStore {
   /// fields. Old lines are carried over textually, so their old fields stay
   /// byte-identical; only the header line is replaced. Truncated or spliced
   /// lines from the unlocked years are padded on their own parsed field
-  /// count and reported, never dropped. Writes a temp file and renames it
-  /// into place under the same lock as appends. Running it twice, or on a
-  /// current file, changes nothing.
+  /// count and reported, never dropped. A current header with short data
+  /// lines (a legacy row the old binary appended after the migration) is
+  /// padded the same way. Writes a temp file and renames it into place
+  /// under the same lock as appends. Running it twice changes nothing the
+  /// second time.
   Future<MigrateOutcome> migrate() async => withLock((content) async {
     final lines = _splitLines(content);
     if (lines.isEmpty) {
@@ -233,10 +235,8 @@ class CsvStore {
       return const AlreadyCurrent();
     }
     final header = _parseLine(lines.first);
-    if (_headersEqual(header, currentHeader)) {
-      return const AlreadyCurrent();
-    }
-    if (!_headersEqual(header, legacyHeader)) {
+    final isCurrent = _headersEqual(header, currentHeader);
+    if (!isCurrent && !_headersEqual(header, legacyHeader)) {
       throw FormatException(
         'Cannot migrate ${file.path}: its header is neither the legacy '
         '12-column nor the current ${currentHeader.length}-column one.',
@@ -247,6 +247,7 @@ class CsvStore {
       ..write(csvEol);
     var rows = 0;
     var ragged = 0;
+    var padded = 0;
     for (var i = 1; i < lines.length; i++) {
       final line = lines[i];
       if (line.isEmpty) {
@@ -262,11 +263,15 @@ class CsvStore {
       final padding = fields.length >= currentHeader.length
           ? ''
           : ',' * (currentHeader.length - fields.length);
-      if (fields.length != legacyHeader.length) {
+      if (padding.isNotEmpty) {
+        padded++;
+      }
+      if (fields.length != legacyHeader.length &&
+          fields.length != currentHeader.length) {
         ragged++;
         _logger.warning(
           'Migrating ${file.path} line ${i + 1} with ${fields.length} '
-          'fields instead of ${legacyHeader.length}; carrying it over.',
+          'fields; carrying it over.',
         );
       }
       buffer
@@ -280,6 +285,9 @@ class CsvStore {
         'Migrated ${file.path} with $ragged ragged lines carried over; '
         'their old fields are intact.',
       );
+    }
+    if (isCurrent && padded == 0) {
+      return const AlreadyCurrent();
     }
     final temp = File('${file.path}.tmp.$pid');
     temp.writeAsStringSync(buffer.toString());
