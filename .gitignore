@@ -11,3 +11,6 @@ doc/api/
 
 /test.csv
 
+# Local scratch: logs, smoke runs, never committed
+/.scratch/
+
