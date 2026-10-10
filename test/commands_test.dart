@@ -64,6 +64,51 @@ void main() {
       expect(await dead.exists(), isFalse);
     });
 
+    test('keeps the legacy columns in order and fills the new ones', () async {
+      final csv = File('${temp.path}/reports.csv');
+      final dead = Directory('${temp.path}/failed');
+      for (final name in ['mail1.eml', 'mail3.eml']) {
+        final code = await runPipe(
+          csvFile: csv,
+          deadLetterDir: dead,
+          input: stdinOf(exampleMail(name)),
+        );
+        expect(code, 0);
+      }
+
+      final rows = readRows(csv);
+      expect(rows.first, currentHeader);
+      // mail1: Yahoo-style, DKIM pass, SPF fail.
+      expect(rows[1].sublist(0, 12), [
+        'Yahoo! Inc.',
+        '2020-09-06T00:00:00.000Z',
+        '2020-09-06T23:59:59.000Z',
+        '192.0.2.181',
+        '2',
+        'pass',
+        'fail',
+        'example.com',
+        'example.com',
+        'pass',
+        'mail181.esp.example.net',
+        'pass',
+      ]);
+      expect(rows[1][12], '1000000000.100001');
+      expect(rows[1][13], 'example.com');
+      expect(rows[1][14], 'quarantine');
+      expect(rows[1][19], 'none');
+      expect(rows[1][26], 'true');
+      expect(rows[1][27], 'false');
+      expect(rows[1][28], 'ok');
+      // mail3: plain xml, SPF softfail, quarantined.
+      expect(rows[2][5], 'fail');
+      expect(rows[2][6], 'fail');
+      expect(rows[2][11], 'softfail');
+      expect(rows[2][19], 'quarantine');
+      expect(rows[2][24], 'mfrom');
+      expect(rows[2][28], 'spf-not-listed');
+    });
+
     test('a duplicate exits 0 without writing', () async {
       final csv = File('${temp.path}/reports.csv');
       final dead = Directory('${temp.path}/failed');
