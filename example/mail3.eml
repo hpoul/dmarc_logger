@@ -1,0 +1,35 @@
+Received: from mail.example.net (mail.example.net [203.0.113.25])
+	for <dmarc-reports@example.com>; Fri, 11 Oct 2024 08:00:00 +0200 (CEST)
+MIME-Version: 1.0
+Date: Fri, 11 Oct 2024 06:00:00 +0000
+Message-ID: <30000000000000000001@example.net>
+Subject: Report domain: example.com Submitter: example.net Report-ID: 30000000000000000001
+From: dmarc@example.net
+To: dmarc-reports@example.com
+Content-Type: text/xml;
+	name="example.net!example.com!1728518400!1728604799.xml"
+Content-Disposition: attachment;
+	filename="example.net!example.com!1728518400!1728604799.xml"
+Content-Transfer-Encoding: base64
+
+PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiID8+CjxmZWVkYmFj
+az4KICA8cmVwb3J0X21ldGFkYXRhPgogICAgPG9yZ19uYW1lPmV4YW1wbGUubmV0
+PC9vcmdfbmFtZT4KICAgIDxlbWFpbD5kbWFyY0BleGFtcGxlLm5ldDwvZW1haWw+
+CiAgICA8cmVwb3J0X2lkPjMwMDAwMDAwMDAwMDAwMDAwMDAxPC9yZXBvcnRfaWQ+
+CiAgICA8ZGF0ZV9yYW5nZT4KICAgICAgPGJlZ2luPjE3Mjg1MTg0MDA8L2JlZ2lu
+PgogICAgICA8ZW5kPjE3Mjg2MDQ3OTk8L2VuZD4KICAgIDwvZGF0ZV9yYW5nZT4K
+ICA8L3JlcG9ydF9tZXRhZGF0YT4KICA8cG9saWN5X3B1Ymxpc2hlZD4KICAgIDxk
+b21haW4+ZXhhbXBsZS5jb208L2RvbWFpbj4KICAgIDxhZGtpbT5zPC9hZGtpbT4K
+ICAgIDxhc3BmPnM8L2FzcGY+CiAgICA8cD5xdWFyYW50aW5lPC9wPgogICAgPHBj
+dD4xMDA8L3BjdD4KICA8L3BvbGljeV9wdWJsaXNoZWQ+CiAgPHJlY29yZD4KICAg
+IDxyb3c+CiAgICAgIDxzb3VyY2VfaXA+MjAzLjAuMTEzLjc8L3NvdXJjZV9pcD4K
+ICAgICAgPGNvdW50PjE8L2NvdW50PgogICAgICA8cG9saWN5X2V2YWx1YXRlZD4K
+ICAgICAgICA8ZGlzcG9zaXRpb24+cXVhcmFudGluZTwvZGlzcG9zaXRpb24+CiAg
+ICAgICAgPGRraW0+ZmFpbDwvZGtpbT4KICAgICAgICA8c3BmPmZhaWw8L3NwZj4K
+ICAgICAgPC9wb2xpY3lfZXZhbHVhdGVkPgogICAgPC9yb3c+CiAgICA8aWRlbnRp
+ZmllcnM+CiAgICAgIDxoZWFkZXJfZnJvbT5leGFtcGxlLmNvbTwvaGVhZGVyX2Zy
+b20+CiAgICA8L2lkZW50aWZpZXJzPgogICAgPGF1dGhfcmVzdWx0cz4KICAgICAg
+PHNwZj4KICAgICAgICA8ZG9tYWluPmV4YW1wbGUuY29tPC9kb21haW4+CiAgICAg
+ICAgPHNjb3BlPm1mcm9tPC9zY29wZT4KICAgICAgICA8cmVzdWx0PnNvZnRmYWls
+PC9yZXN1bHQ+CiAgICAgIDwvc3BmPgogICAgPC9hdXRoX3Jlc3VsdHM+CiAgPC9y
+ZWNvcmQ+CjwvZmVlZGJhY2s+Cg==

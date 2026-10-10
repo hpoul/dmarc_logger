@@ -1,0 +1,35 @@
+Received: from mx.enterprise.example.org (mx.enterprise.example.org [198.51.100.25])
+	for <dmarc-reports@example.com>; Fri, 11 Oct 2024 09:00:00 +0200 (CEST)
+MIME-Version: 1.0
+Date: Fri, 11 Oct 2024 07:00:00 +0000
+Message-ID: <40000000000000000001@enterprise.example.org>
+Subject: Report domain: mail.example.com Submitter: enterprise.example.org Report-ID: 40000000000000000001
+From: dmarc@enterprise.example.org
+To: dmarc-reports@example.com
+Content-Type: multipart/mixed; boundary="----=_Part_400000_100000.1728604800000"
+
+This is a multi-part message in MIME format.
+
+------=_Part_400000_100000.1728604800000
+Content-Type: text/plain; charset=utf-8
+
+Aggregate DMARC report attached.
+------=_Part_400000_100000.1728604800000
+Content-Type: application/gzip
+Content-Transfer-Encoding: base64
+
+H4sIAAAAAAAAE9VWyW7cMAy95yuEudeyB5NmAihKT/2C9mxwbNqjxlpKyVn+vpDl
+bZJMOuglqC+WSJp8fHoiLO6fdccekbyy5m5TZPmGoalsrUx7t/n54/uX/YbdyyvR
+INYHqB7kFWOC0FkKpcYANQSINsaEpbY0oFGiCUiOlMcMn0G7DjNLreBzQIpHDaqT
+tQaqvp37JMWk+LGqquUuf/MUgi/+FF9DwJLAtGNBxsQBW2VkcbPdXxf7XZ4LniyT
+H009eL/mu5vbW8HjPiXjp9nmamsOhLOdql5K1x865Y84A7EalJGxlbm7ymrBR0eK
+gvpBaUmCp8Vo9K4ZbPGdTE7+7oHABGVQcDdZqyCL2FBcDADfAyMIK0sTLrJPc+fe
+9lRhqZwsbrdZnm2z3U7wxTrFVbY3QV4LnhaTeSyGj9D1EKbOU/fKO+tVUNZIYyPm
+tWUVF7tuQHWCLwQkbK4ZHTMLoyDAr1MwJsKLQ9lYegKqsRZ82K8DKqs1mjAchjIt
+65QPDJ8dmHgDYlvJv1Thp2VmYl/1KvhMp1A1mqAaheTnz44INVLZkNXvKGHtHdO9
+SSKgD8eS0PddWPK+4mqUFHo3FzAYTqWWSMUOq2BJGnzyheDzfs1vLCUdeB9ZGDYz
+C+u6Z0B8LPhTFL/AbPPt7iMcSQKfj+Ng2/5vhJwKdSwXteZP59tbIJV1KHUUguBp
+c+GBLBOCvxZKDJ7u/WUjYJ9dF1mR51mcguemQPH5U+D/uI0XCHA8zYDaIZGlf9HX
+JTofFHXEzp5Vl8E+ELxz0y4SmODLn8IfLgWfxV0IAAA=
+
+------=_Part_400000_100000.1728604800000--
