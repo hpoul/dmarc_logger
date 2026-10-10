@@ -497,6 +497,23 @@ void main() {
       );
     });
 
+    test('softfail alone counts as SPF failure', () {
+      expect(
+        summarizeSpf(
+          recordWith(
+            spfResults: const [
+              SpfAuthDetail(
+                domain: 'example.com',
+                result: Lenient.known(SpfAuthResult.softfail),
+              ),
+            ],
+          ),
+          relaxed,
+        ),
+        SpfSummary.failed,
+      );
+    });
+
     test('softfail counts as SPF failure, temperror as provisional', () {
       expect(
         summarizeSpf(
