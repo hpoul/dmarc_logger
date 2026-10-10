@@ -1,0 +1,2 @@
+# Mail fixtures are byte-exact inputs; never normalize their line endings.
+example/*.eml -text
