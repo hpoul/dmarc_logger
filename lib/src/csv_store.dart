@@ -292,17 +292,57 @@ class CsvStore {
   /// The lock lives on a sibling `.lock` file, so the CSV itself is only
   /// ever touched inside the critical section. The action may await: the
   /// lock is held until it completes. Exposed for tests.
-  Future<T> withLock<T>(Future<T> Function(String content) action) async {
+  ///
+  /// Dart's [RandomAccessFile.lock] does not wait: a contended lock throws
+  /// [FileSystemException] with `EAGAIN` at once. So acquisition retries
+  /// until [lockTimeout]; only a still-contended lock after that, or a
+  /// failure that is not contention, throws to the caller.
+  Future<T> withLock<T>(
+    Future<T> Function(String content) action, {
+    Duration lockTimeout = const Duration(seconds: 30),
+  }) async {
     final lockFile = File('${file.path}.lock');
     final access = await lockFile.open(mode: FileMode.write);
     try {
-      await access.lock(FileLock.exclusive);
+      await _acquire(access, lockTimeout);
       final content = file.existsSync() ? file.readAsStringSync() : '';
       return await action(content);
     } finally {
       await access.unlock();
       await access.close();
     }
+  }
+
+  /// Acquires the exclusive lock, waiting out contention until [timeout].
+  Future<void> _acquire(RandomAccessFile access, Duration timeout) async {
+    final deadline = DateTime.now().add(timeout);
+    var waited = false;
+    while (true) {
+      try {
+        await access.lock(FileLock.exclusive);
+        if (waited) {
+          _logger.fine('Acquired the lock on ${file.path}.lock after waiting.');
+        }
+        return;
+      } on FileSystemException catch (e) {
+        if (!_isContention(e) || DateTime.now().isAfter(deadline)) {
+          rethrow;
+        }
+        if (!waited) {
+          waited = true;
+          _logger.fine('Waiting for the lock on ${file.path}.lock.');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 25));
+      }
+    }
+  }
+
+  /// Whether a failed lock attempt means "someone else holds it" rather
+  /// than a real error. POSIX reports contention as `EAGAIN` (11 on Linux,
+  /// 35 on macOS, where `EWOULDBLOCK` shares the value) or `EACCES` (13).
+  bool _isContention(FileSystemException e) {
+    final code = e.osError?.errorCode;
+    return code == 11 || code == 35 || code == 13;
   }
 
   /// Whether a row with the report's `(orgName, reportId)` is already

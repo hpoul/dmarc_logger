@@ -331,26 +331,37 @@ void main() {
         });
         await acquired.future;
         final process = await startPipe(csv, mail);
-        // The pipe creates the lock file before blocking on it; wait for
-        // that instead of assuming a startup time.
-        final lockFile = File('${csv.path}.lock');
-        for (var i = 0; i < 300 && !lockFile.existsSync(); i++) {
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-        }
-        expect(lockFile.existsSync(), isTrue);
+        // The pipe announces itself on stderr before parsing, which takes
+        // milliseconds; waiting for that line removes JIT startup time
+        // from the picture without assuming how long it takes.
+        final started = Completer<void>();
+        final errBuffer = StringBuffer();
+        final errSub = process.stderr
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .listen((line) {
+              errBuffer.writeln(line);
+              if (!started.isCompleted && line.contains('Pipe mode:')) {
+                started.complete();
+              }
+            });
+        await started.future.timeout(const Duration(seconds: 120));
         // Give an unlocked pipe time to land its rows, then check it did
         // not: with the lock held it must still be waiting.
-        await Future<void>.delayed(const Duration(seconds: 2));
+        await Future<void>.delayed(const Duration(seconds: 3));
         expect(
           csv.existsSync(),
           isFalse,
           reason: 'the pipe wrote while the lock was held',
         );
         release.complete();
-        final (exit, _, err) = await finishPipe(process);
+        final exit = await process.exitCode;
+        await errSub.cancel();
         await hold;
+        final out = await process.stdout.transform(utf8.decoder).join();
 
-        expect(exit, 0, reason: 'stderr: $err');
+        expect(exit, 0, reason: 'stderr: $errBuffer');
+        expect(out, isEmpty, reason: 'stdout belongs to postfix');
         expect(readRows(csv).skip(1), hasLength(1));
       },
     );
