@@ -188,7 +188,7 @@ class CsvStore {
   /// write, so concurrent postfix pipes cannot interleave.
   Future<AppendOutcome> appendReport(DmarcReport report) async {
     final rows = reportToRows(report);
-    return withLock((content) {
+    return withLock((content) async {
       final lines = _splitLines(content);
       final header = lines.isEmpty ? null : _parseLine(lines.first);
       if (header != null && !_headersEqual(header, currentHeader)) {
@@ -226,7 +226,7 @@ class CsvStore {
   /// count and reported, never dropped. Writes a temp file and renames it
   /// into place under the same lock as appends. Running it twice, or on a
   /// current file, changes nothing.
-  Future<MigrateOutcome> migrate() async => withLock((content) {
+  Future<MigrateOutcome> migrate() async => withLock((content) async {
     final lines = _splitLines(content);
     if (lines.isEmpty) {
       file.writeAsStringSync('${_convert([currentHeader])}$csvEol');
@@ -290,15 +290,15 @@ class CsvStore {
 
   /// Runs [action] with the file's text while holding the exclusive lock.
   /// The lock lives on a sibling `.lock` file, so the CSV itself is only
-  /// ever touched inside the critical section. Exposed for the pipe mode's
-  /// header-version logging and for tests.
-  Future<T> withLock<T>(T Function(String content) action) async {
+  /// ever touched inside the critical section. The action may await: the
+  /// lock is held until it completes. Exposed for tests.
+  Future<T> withLock<T>(Future<T> Function(String content) action) async {
     final lockFile = File('${file.path}.lock');
     final access = await lockFile.open(mode: FileMode.write);
     try {
       await access.lock(FileLock.exclusive);
       final content = file.existsSync() ? file.readAsStringSync() : '';
-      return action(content);
+      return await action(content);
     } finally {
       await access.unlock();
       await access.close();
