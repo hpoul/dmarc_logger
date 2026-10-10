@@ -11,20 +11,21 @@ jobs:
 
     runs-on: ubuntu-latest
 
-#    container:
-#      image:  google/dart:latest
-
     steps:
-    - uses: actions/checkout@v2
-    - uses: cedx/setup-dart@v2
+    - uses: actions/checkout@v4
+    - uses: dart-lang/setup-dart@v1
       with:
-        release-channel: dev
+        sdk: stable
     - name: Install dependencies
-      run: pub get
+      run: dart pub get
+    - name: Analyze
+      run: dart analyze --fatal-infos
+    - name: Test
+      run: dart test
     - name: compile
       run: dart compile exe bin/dmarc_logger.dart -o dmarc_logger_linux.exe
     - name: Upload Artifact
-      uses: actions/upload-artifact@v2.1.4
+      uses: actions/upload-artifact@v4
       with:
         # Artifact name
         name: dmarc_logger_linux.exe
