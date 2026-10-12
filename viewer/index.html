@@ -164,7 +164,7 @@ svg text { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
     <p class="muted" style="margin:12px 0 6px"><strong>Failure causes</strong>, one label per row as written by dmarc_logger:</p>
     <ul class="notes">
       <li><span class="chip pass">ok</span> DMARC passed.</li>
-      <li><span class="chip warn">forwarded</span> The receiver overrode the policy for a forwarding reason.</li>
+      <li><span class="chip warn">forwarded</span> The receiver overrode the policy for a forwarding reason (<span class="mono">forwarded</span>, <span class="mono">trusted_forwarder</span>, <span class="mono">mailing_list</span>).</li>
       <li><span class="chip warn">verdict-differs</span> This tool computed an aligned pass but the receiver reported fail on both mechanisms.</li>
       <li><span class="chip warn">temperror</span> A transient DNS error left the verdict provisional.</li>
       <li><span class="chip fail">dkim-unaligned</span> A signature passed, but for a third-party domain.</li>
@@ -215,6 +215,15 @@ svg text { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
     if (missing.length) {
       box.hidden = false;
       box.innerHTML = '<h2>This is not a dmarc_logger CSV</h2><p class="error">The header has no ' + missing.map(esc).join(', ') + '. dmarc_logger writes: <span class="mono">' + REQUIRED.join(',') + '</span></p>';
+      // Clear the previous file's figures: leaving them under the error
+      // would present stale data as the failed file's.
+      state.has = { cause: false, disposition: false, reason: false, reports: false };
+      Object.assign(state, { records: [], bad: [], total: 0, example: false });
+      $('sourceLabel').textContent = label;
+      $('exampleFlag').hidden = true;
+      $('sourceDetail').textContent = '';
+      fillDomains();
+      render();
       return;
     }
     box.hidden = true;
@@ -445,7 +454,8 @@ svg text { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
 
   function renderQuality() {
     const el = $('quality');
-    if (!state.bad.length) { el.innerHTML = '<p class="muted" style="margin:0">Every row of the ' + fmt(state.total) + ' in the file was usable.</p>'; $('qualityPanel').classList.remove('problem'); return; }
+    if (!state.bad.length && state.total > 0) { el.innerHTML = '<p class="muted" style="margin:0">Every row of the ' + fmt(state.total) + ' in the file was usable.</p>'; $('qualityPanel').classList.remove('problem'); return; }
+    if (!state.bad.length) { el.innerHTML = '<p class="muted" style="margin:0">No rows to show.</p>'; $('qualityPanel').classList.remove('problem'); return; }
     $('qualityPanel').classList.add('problem');
     el.innerHTML = '<p style="margin:0 0 8px">' + fmt(state.bad.length) + ' of ' + fmt(state.total) + ' rows were set aside and are not in any figure above. Truncated values such as <span class="mono">"pas"</span> usually mean two reports were appended to the file at the same moment.</p><div class="scroll"><table><thead><tr><th class="num">Line</th><th>Problem</th></tr></thead><tbody>' +
       state.bad.slice(0, 25).map((b) => '<tr><td class="num mono">' + b.line + '</td><td>' + esc(b.why) + '</td></tr>').join('') + '</tbody></table></div>' + (state.bad.length > 25 ? '<p class="muted" style="margin:8px 0 0">and ' + fmt(state.bad.length - 25) + ' more.</p>' : '');

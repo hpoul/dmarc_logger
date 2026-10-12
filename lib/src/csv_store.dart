@@ -214,7 +214,12 @@ class CsvStore {
         buffer.write(csvEol);
       }
       file.writeAsStringSync(buffer.toString(), mode: FileMode.append);
-      _logger.fine('Appended ${rows.length} rows to ${file.path}.');
+      // The header version every run reports: current here by construction,
+      // anything else having returned HeaderMismatch above.
+      _logger.fine(
+        'Appended ${rows.length} rows to ${file.path} '
+        '(header: current, ${currentHeader.length} columns).',
+      );
       return Appended(rows.length);
     });
   }

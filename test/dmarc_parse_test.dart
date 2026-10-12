@@ -260,7 +260,12 @@ void main() {
       expect(domainsAlign('mail.example.com', 'example.com', relaxed), isTrue);
       expect(domainsAlign('example.com', 'mail.example.com', relaxed), isTrue);
       expect(domainsAlign('other.example', 'example.com', relaxed), isFalse);
-      expect(domainsAlign('notexample.com', 'example.com', relaxed), isFalse);
+      // Same dot-boundary class as the notexample.com case, on example.*
+      // domains: a shared suffix without a dot boundary does not align.
+      expect(
+        domainsAlign('notmail.example.com', 'mail.example.com', relaxed),
+        isFalse,
+      );
     });
 
     test('ignores case and a trailing dot', () {

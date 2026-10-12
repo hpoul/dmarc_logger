@@ -318,6 +318,39 @@ void main() {
     );
 
     test(
+      'four pipes racing distinct mails land every row intact',
+      timeout: const Timeout(Duration(seconds: 180)),
+      () async {
+        final csv = File('${temp.path}/reports.csv');
+        // mail1..mail3 carry one row each, mail4 two: five rows total.
+        final mails = [
+          exampleMail('mail1.eml'),
+          exampleMail('mail2.eml'),
+          exampleMail('mail3.eml'),
+          exampleMail('mail4.eml'),
+        ];
+
+        final processes = await Future.wait(
+          mails.map((mail) => startPipe(csv, mail)),
+        );
+        final results = await Future.wait(processes.map(finishPipe));
+
+        for (final (exit, out, err) in results) {
+          expect(exit, 0, reason: 'stderr: $err');
+          expect(out, isEmpty, reason: 'stdout belongs to postfix');
+        }
+        final rows = readRows(csv);
+        expect(rows.first, currentHeader);
+        expect(rows.skip(1), hasLength(5));
+        for (final row in rows.skip(1)) {
+          expect(row, hasLength(currentHeader.length));
+        }
+        final ids = rows.skip(1).map((row) => row[12]).toSet();
+        expect(ids, hasLength(4));
+      },
+    );
+
+    test(
       'a pipe waits while the lock is held elsewhere',
       timeout: const Timeout(Duration(seconds: 180)),
       () async {

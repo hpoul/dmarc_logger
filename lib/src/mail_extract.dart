@@ -134,5 +134,10 @@ bool _isFeedback(Uint8List bytes) {
 }
 
 extension on MimePart {
-  bool get isMultipart => mediaType.top == MediaToptype.multipart;
+  // A switch even for one arm: the house rule bans == on enums, and a
+  // future enough_mail case still lands in the wildcard on purpose.
+  bool get isMultipart => switch (mediaType.top) {
+    MediaToptype.multipart => true,
+    _ => false,
+  };
 }

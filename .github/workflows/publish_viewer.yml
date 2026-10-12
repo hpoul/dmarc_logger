@@ -4,6 +4,8 @@ on:
   push:
     branches: [ master ]
     paths: [ viewer/** ]
+  pull_request:
+    paths: [ viewer/** ]
 
 permissions:
   contents: read
@@ -33,4 +35,5 @@ jobs:
       with:
         path: viewer
     - id: deploy
+      if: github.ref == 'refs/heads/master'
       uses: actions/deploy-pages@v4

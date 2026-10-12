@@ -16,7 +16,8 @@ dmarc_logger --csv-file /path/to/reports.csv [--dead-letter-dir /path/to/failed]
 dmarc_logger migrate --csv-file /path/to/reports.csv
 
 # Replay every dead-lettered mail through the current parser. Successes are
-# appended and moved to "processed/"; failures stay put with their reason
+# appended and moved to "processed/"; duplicates already in the file are
+# filed as processed without writing; failures stay put with their reason
 # on stderr.
 dmarc_logger reprocess --csv-file /path/to/reports.csv [--dead-letter-dir /path/to/failed]
 ```
@@ -74,7 +75,7 @@ Appended after them:
 | `reportId` | `report_metadata/report_id`; with `orgName` it recognizes duplicates. |
 | `policyDomain` | The domain the receiver evaluated (`policy_published/domain`). |
 | `policyP` | The requested policy: `none`, `quarantine` or `reject`. |
-| `policySp` | The subdomain policy, if the record publishes one. |
+| `policySp` | The subdomain policy, if the published policy sets one. |
 | `policyPct` | The `pct` tag, if published. |
 | `policyAdkim`, `policyAspf` | The alignment modes (`r`/`s`) under which `dkimAligned`/`spfAligned` were computed; without them those columns are uninterpretable. |
 | `disposition` | What the receiver did: `none`, `quarantine` or `reject`. |
@@ -95,7 +96,7 @@ produces it and what to do about it.
 | Label | Meaning | Usual producer | Remedy |
 |---|---|---|---|
 | `ok` | DMARC passed. | — | None. |
-| `forwarded` | The receiver overrode the policy for a forwarding reason. | Mailing lists, forwarders. | None if expected; else check the `reasonType`. |
+| `forwarded` | The receiver overrode the policy for a forwarding reason (`forwarded`, `trusted_forwarder`, `mailing_list`). | Mailing lists, forwarders. | None if expected; else check the `reasonType`. |
 | `verdict-differs` | This tool computed an aligned pass but the receiver reported fail on both mechanisms. | Subdomain-vs-organizational-domain edge cases, receiver bugs. | Trust the receiver; inspect `dkimAll`/`spfAll`. |
 | `temperror` | A transient DNS error left the verdict provisional. | DNS timeouts at the receiver. | Ignore; later reports supersede it. |
 | `dkim-unaligned` | A signature passed, but for a third-party domain. | ESPs signing with their own `d=`. | Publish a DKIM key for your domain at the ESP (aligned `d=`). |
@@ -138,12 +139,13 @@ empty. Any row listed there predates the fix or was written around it.
 
 ## Deploying (steps for root)
 
-The binary was proven on the host before anything changed there: copied
-aside, piped every `example/*.eml` fixture through it into a temporary CSV,
-and `migrate` run against a copy of the live file with row counts and the
-first twelve fields verified byte-identical. To deploy:
+Before changing anything on the host, prove the binary there: copy it
+aside as `dmarc_logger_linux.exe.new` (never over the running one), pipe
+every `example/*.eml` fixture through it into a temporary CSV, and run
+`migrate` against a copy of the live file, checking row counts and that
+the first twelve fields survive byte-identical. To deploy:
 
-1. `cd /home/herbert/dmarc && cp reports.csv reports.csv.pre29`
+1. `cd /home/herbert/dmarc && cp reports.csv "reports.csv.pre-migrate-$(date +%F)"`
 2. Migrate the live file as the pipe user (root would leave the file
    root-owned):
    `sudo -u nobody /home/herbert/dmarc_logger_linux.exe.new migrate --csv-file /home/herbert/dmarc/reports.csv`
