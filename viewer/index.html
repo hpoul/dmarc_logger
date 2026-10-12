@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dmarc_logger Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of operator panels — summary first, then per-domain, trend, and the sources that need attention. */
+:root {
+  --bg: #f5f7f7;
+  --panel: #ffffff;
+  --fg: #142321;
+  --muted: #5b6a68;
+  --line: #d9e1e0;
+  --accent: #1d6a86;
+  --pass: #2c7a4b;
+  --warn: #a8701a;
+  --fail: #b23c2c;
+  --pass-bg: #e3f1e8;
+  --warn-bg: #f6ecd9;
+  --fail-bg: #f7e3df;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1716; --panel: #162120; --fg: #e3ecea; --muted: #93a3a0; --line: #2a3836;
+    --accent: #6cb6d1; --pass: #6cc28e; --warn: #e0ab55; --fail: #ec7a68;
+    --pass-bg: #18322a; --warn-bg: #3a2e18; --fail-bg: #3d1f1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1716; --panel: #162120; --fg: #e3ecea; --muted: #93a3a0; --line: #2a3836;
+  --accent: #6cb6d1; --pass: #6cc28e; --warn: #e0ab55; --fail: #ec7a68;
+  --pass-bg: #18322a; --warn-bg: #3a2e18; --fail-bg: #3d1f1a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* The example flag and optional panels toggle via the hidden attribute, which
+   loses to any display rule without this. */
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; justify-content: space-between; }
+h1 { font-size: 1.6rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 code { font-family: var(--font-mono); font-weight: 500; font-size: 0.9em; }
+.lede { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+h2 { font-size: 1rem; font-weight: 600; margin: 0 0 12px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.drop p { margin: 0; color: var(--muted); }
+.source-label { font-weight: 600; color: var(--fg); }
+.example-flag { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--warn); background: var(--warn-bg); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+button, select, .filebtn { font: inherit; font-size: 0.9rem; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button:hover, .filebtn:hover, select:hover { border-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.controls label { font-size: 0.8rem; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.controls label.primary { color: var(--bg); font-size: 0.9rem; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.kpi .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.kpi .value { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi .sub { font-size: 0.8rem; color: var(--muted); }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.88rem; }
+th { text-align: left; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--line); padding: 6px 8px; white-space: nowrap; }
+td { border-bottom: 1px solid var(--line); padding: 7px 8px; vertical-align: top; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.mono { font-family: var(--font-mono); font-size: 0.85em; }
+.chip { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.chip.pass { color: var(--pass); background: var(--pass-bg); }
+.chip.warn { color: var(--warn); background: var(--warn-bg); }
+.chip.fail { color: var(--fail); background: var(--fail-bg); }
+.bar { display: inline-block; width: 64px; height: 6px; background: var(--fail-bg); border-radius: 3px; vertical-align: middle; margin-right: 6px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--pass); }
+.bar > i.share { background: var(--accent); }
+.muted { color: var(--muted); }
+.legend { display: flex; gap: 16px; font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+svg text { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.notes { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.85rem; display: grid; gap: 4px; }
+.problem { border-color: color-mix(in srgb, var(--fail) 40%, var(--line)); }
+.problem h2 { color: var(--fail); }
+.error { color: var(--fail); font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) { .kpi, .panel { transition: border-color .15s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>DMARC aggregate reports from <code>dmarc_logger</code></h1>
+      <p class="lede">Drop the <span class="mono">reports.csv</span> that dmarc_logger appends to. The file is read in this browser and never uploaded.</p>
+    </div>
+  </header>
+
+  <div class="drop" id="drop">
+    <p>Showing: <span class="source-label" id="sourceLabel">Example data</span><span class="example-flag" id="exampleFlag">Example</span><br><span id="sourceDetail">Invented rows for example.app and example.net, so the page shows what it does.</span></p>
+    <div class="controls">
+      <label class="filebtn primary" for="file">Open reports.csv</label>
+      <input type="file" id="file" accept=".csv,text/csv" hidden>
+      <button type="button" id="loadExample">Show example</button>
+    </div>
+  </div>
+
+  <div class="controls" aria-label="Filters">
+    <label for="domain">Domain <select id="domain"></select></label>
+    <label for="period">Period
+      <select id="period">
+        <option value="30">Last 30 days</option>
+        <option value="90" selected>Last 90 days</option>
+        <option value="365">Last 12 months</option>
+        <option value="0">Everything</option>
+      </select>
+    </label>
+    <span class="muted" id="rangeNote"></span>
+  </div>
+
+  <div id="errorBox" class="panel problem" hidden></div>
+
+  <section class="kpis" id="kpis" aria-label="Summary"></section>
+
+  <section class="panel">
+    <h2>Messages per week</h2>
+    <div class="legend"><span style="--c: var(--pass)">DMARC pass</span><span style="--c: var(--fail)">DMARC fail</span></div>
+    <div id="chart"></div>
+  </section>
+
+  <section class="panel">
+    <h2>By sending domain</h2>
+    <div class="scroll"><table id="domains"></table></div>
+  </section>
+
+  <section class="panel" id="causePanel" hidden>
+    <h2>Why mail failed, by cause</h2>
+    <div class="scroll"><table id="causes"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Sources, most failed messages first</h2>
+    <div class="scroll"><table id="sources"></table></div>
+    <p class="muted" id="sourcesNote" style="margin:8px 0 0;font-size:.82rem"></p>
+  </section>
+
+  <section class="panel" id="qualityPanel">
+    <h2>Rows the viewer could not use</h2>
+    <div id="quality"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Reading the status</h2>
+    <ul class="notes">
+      <li><span class="chip pass">Aligned</span> DKIM and SPF both pass for the From domain. Nothing to do.</li>
+      <li><span class="chip warn">SPF only</span> Passes because of the sending IP alone, with no aligned DKIM signature. Breaks when the mail is forwarded, and it is what unsigned mail from a trusted server looks like.</li>
+      <li><span class="chip warn">DKIM only</span> Signed, but sent from an IP your SPF record does not list. Usually a forwarder or mailing list; fine as long as the signature holds.</li>
+      <li><span class="chip fail">Failing</span> Most messages fail DMARC. Either somebody else is sending as the domain, or a server of yours is neither listed in SPF nor signing. With p=quarantine these land in spam.</li>
+    </ul>
+    <p class="muted" style="margin:12px 0 6px"><strong>Failure causes</strong>, one label per row as written by dmarc_logger:</p>
+    <ul class="notes">
+      <li><span class="chip pass">ok</span> DMARC passed.</li>
+      <li><span class="chip warn">forwarded</span> The receiver overrode the policy for a forwarding reason.</li>
+      <li><span class="chip warn">verdict-differs</span> This tool computed an aligned pass but the receiver reported fail on both mechanisms.</li>
+      <li><span class="chip warn">temperror</span> A transient DNS error left the verdict provisional.</li>
+      <li><span class="chip fail">dkim-unaligned</span> A signature passed, but for a third-party domain.</li>
+      <li><span class="chip fail">spf-unaligned</span> SPF passed, but for a third-party domain.</li>
+      <li><span class="chip fail">dkim-broken</span> DKIM failed definitively (fail, policy, permerror).</li>
+      <li><span class="chip fail">spf-not-listed</span> SPF failed (fail, softfail, permerror).</li>
+      <li><span class="chip fail">unsigned</span> Neither mechanism produced a signal.</li>
+      <li><span class="chip warn">unrecognized</span> A result value outside the RFC set.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const REQUIRED = ['orgName','begin','end','sourceIp','count','dkim','spf','headerFrom','dkim_domain','dkim_result','spf_domain','spf_result'];
+  const $ = (id) => document.getElementById(id);
+  const state = { records: [], bad: [], total: 0, domain: '', period: 90, example: true, has: { cause: false, disposition: false, reason: false, reports: false } };
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+  };
+
+  // RFC 4180 reader: quoted fields, doubled quotes, CRLF or LF.
+  function parseCsv(text) {
+    const rows = []; let row = []; let field = ''; let quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (quoted) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else { quoted = false; } }
+        else { field += c; }
+      } else if (c === '"') { quoted = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); rows.push(row); row = []; field = '';
+      } else { field += c; }
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    return rows.filter((r) => !(r.length === 1 && r[0] === ''));
+  }
+
+  function load(text, label, detail, example) {
+    const table = parseCsv(text);
+    const header = table[0] || [];
+    const missing = REQUIRED.filter((c) => !header.includes(c));
+    const box = $('errorBox');
+    if (missing.length) {
+      box.hidden = false;
+      box.innerHTML = '<h2>This is not a dmarc_logger CSV</h2><p class="error">The header has no ' + missing.map(esc).join(', ') + '. dmarc_logger writes: <span class="mono">' + REQUIRED.join(',') + '</span></p>';
+      return;
+    }
+    box.hidden = true;
+    const col = Object.fromEntries(header.map((h, i) => [h, i]));
+    const records = []; const bad = [];
+    table.slice(1).forEach((r, i) => {
+      const line = i + 2;
+      const get = (k) => (r[col[k]] ?? '').trim();
+      const why = [];
+      if (r.length !== header.length) why.push(r.length + ' fields, header has ' + header.length);
+      const dkim = get('dkim'), spf = get('spf');
+      if (!['pass', 'fail'].includes(dkim)) why.push('dkim "' + dkim + '"');
+      if (!['pass', 'fail'].includes(spf)) why.push('spf "' + spf + '"');
+      const count = Number(get('count'));
+      if (!Number.isInteger(count) || count < 0) why.push('count "' + get('count') + '"');
+      const end = new Date(get('end'));
+      if (isNaN(end)) why.push('end "' + get('end') + '"');
+      if (why.length) { bad.push({ line, why: why.join(', ') }); return; }
+      records.push({
+        org: get('orgName'), end, ip: get('sourceIp'), count, dkim, spf,
+        from: get('headerFrom').toLowerCase() || '(none)',
+        dkimResult: get('dkim_result') || '(none)', spfResult: get('spf_result') || '(none)',
+        dkimDomain: get('dkim_domain'),
+        disposition: col.disposition !== undefined ? get('disposition') : '',
+        cause: col.failureCause !== undefined ? get('failureCause') : '',
+        reason: col.reasonType !== undefined ? get('reasonType') : '',
+        reasonComment: col.reasonComment !== undefined ? get('reasonComment') : '',
+        report: col.reportId !== undefined ? get('reportId') : '',
+      });
+    });
+    state.has = { cause: col.failureCause !== undefined, disposition: col.disposition !== undefined, reason: col.reasonType !== undefined, reports: col.reportId !== undefined };
+    Object.assign(state, { records, bad, total: table.length - 1, example });
+    $('sourceLabel').textContent = label;
+    $('exampleFlag').hidden = !example;
+    $('sourceDetail').textContent = detail || (records.length.toLocaleString('en-US') + ' report rows read, ' + bad.length.toLocaleString('en-US') + ' set aside.');
+    fillDomains();
+    render();
+  }
+
+  function fillDomains() {
+    const counts = new Map();
+    for (const r of state.records) counts.set(r.from, (counts.get(r.from) || 0) + r.count);
+    const domains = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([d]) => d);
+    const remembered = store.get('dmarc.domain');
+    const sel = $('domain');
+    sel.innerHTML = '<option value="">All domains</option>' + domains.map((d) => '<option value="' + esc(d) + '">' + esc(d) + '</option>').join('');
+    state.domain = domains.includes(remembered) ? remembered : '';
+    sel.value = state.domain;
+  }
+
+  function filtered() {
+    if (!state.records.length) return [];
+    const latest = Math.max(...state.records.map((r) => r.end.getTime()));
+    const from = state.period ? latest - state.period * 864e5 : -Infinity;
+    return state.records.filter((r) => r.end.getTime() > from && (!state.domain || r.from === state.domain));
+  }
+
+  const pct = (n, d) => (d ? Math.round((n / d) * 1000) / 10 : 0);
+  const fmt = (n) => n.toLocaleString('en-US');
+  const day = (d) => d.toISOString().slice(0, 10);
+  function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
+  function sums(rows) {
+    const s = { msgs: 0, pass: 0, dkim: 0, spf: 0, unsigned: 0 };
+    for (const r of rows) {
+      s.msgs += r.count;
+      if (r.dkim === 'pass' || r.spf === 'pass') s.pass += r.count;
+      if (r.dkim === 'pass') s.dkim += r.count;
+      if (r.spf === 'pass') s.spf += r.count;
+      if (r.dkimResult === 'none' || r.dkimResult === '(none)') s.unsigned += r.count;
+    }
+    return s;
+  }
+
+  function status(s) {
+    if (s.msgs - s.pass > s.msgs / 2) return ['fail', 'Failing'];
+    if (s.dkim < s.msgs / 2) return ['warn', 'SPF only'];
+    if (s.spf < s.msgs / 2) return ['warn', 'DKIM only'];
+    return ['pass', 'Aligned'];
+  }
+
+  // Chip color per failureCause label. 'ok' is the only passing cause; every
+  // other known label describes failed mail, with the explainable or
+  // provisional ones in amber. An unknown future label reads as a failure,
+  // because that is the only row it can appear on.
+  function causeKind(cause) {
+    if (cause === 'ok') return 'pass';
+    if (['forwarded', 'verdict-differs', 'temperror', 'unrecognized'].includes(cause)) return 'warn';
+    return 'fail';
+  }
+
+  function passBar(n, d, fill) {
+    const p = pct(n, d);
+    return '<span class="bar" aria-hidden="true"><i' + (fill ? ' class="' + fill + '"' : '') + ' style="width:' + p + '%"></i></span>' + p.toFixed(1) + '%';
+  }
+
+  function render() {
+    const rows = filtered();
+    const s = sums(rows);
+    const ips = new Set(rows.map((r) => r.ip));
+    const orgs = new Set(rows.map((r) => r.org));
+    const ends = rows.map((r) => r.end.getTime());
+    $('rangeNote').textContent = rows.length ? 'Reports ending ' + day(new Date(Math.min(...ends))) + ' to ' + day(new Date(Math.max(...ends))) : 'No reports in this period';
+
+    const [kind] = status(s);
+    // What receivers did with the failed messages, when the file says.
+    let failedSub = fmt(s.msgs - s.pass) + ' messages failed';
+    if (state.has.disposition) {
+      const disp = { none: 0, quarantine: 0, reject: 0 };
+      for (const r of rows) {
+        if (r.dkim !== 'pass' && r.spf !== 'pass' && r.disposition in disp) disp[r.disposition] += r.count;
+      }
+      failedSub += ' · quarantine ' + fmt(disp.quarantine) + ' · reject ' + fmt(disp.reject);
+    }
+    const kpis = [
+      ['Messages reported', fmt(s.msgs), fmt(rows.length) + ' report rows'],
+      ['DMARC pass', pct(s.pass, s.msgs).toFixed(1) + '%', failedSub],
+      ['DKIM aligned', pct(s.dkim, s.msgs).toFixed(1) + '%', pct(s.unsigned, s.msgs).toFixed(1) + '% carried no signature'],
+      ['SPF aligned', pct(s.spf, s.msgs).toFixed(1) + '%', 'by the reporting receiver'],
+      ['Sending IPs', fmt(ips.size), fmt(orgs.size) + ' reporting organizations'],
+    ];
+    if (state.has.reports) kpis.push(['Reports', fmt(new Set(rows.map((r) => r.org + '|' + r.report)).size), 'distinct report ids']);
+    $('kpis').innerHTML = kpis.map(([l, v, sub], i) => '<div class="kpi"><div class="label">' + l + '</div><div class="value"' + (i === 1 && kind === 'fail' ? ' style="color:var(--fail)"' : '') + '>' + v + '</div><div class="sub">' + sub + '</div></div>').join('');
+
+    renderChart(rows);
+    renderDomains(rows);
+    renderCauses(rows);
+    renderSources(rows);
+    renderQuality();
+  }
+
+  function renderChart(rows) {
+    const el = $('chart');
+    if (!rows.length) { el.innerHTML = '<p class="muted">Nothing to chart for this filter.</p>'; return; }
+    const week = (d) => { const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())); t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7)); return t.getTime(); };
+    const buckets = new Map();
+    for (const r of rows) {
+      const k = week(r.end); const b = buckets.get(k) || { pass: 0, fail: 0 };
+      if (r.dkim === 'pass' || r.spf === 'pass') b.pass += r.count; else b.fail += r.count;
+      buckets.set(k, b);
+    }
+    const first = Math.min(...buckets.keys()), last = Math.max(...buckets.keys());
+    const weeks = [];
+    for (let t = first; t <= last; t += 7 * 864e5) weeks.push([t, buckets.get(t) || { pass: 0, fail: 0 }]);
+    const max = Math.max(1, ...weeks.map(([, b]) => b.pass + b.fail));
+    const step = niceStep(max / 4); const top = Math.ceil(max / step) * step;
+    const W = 1000, H = 220, L = 48, R = 8, T = 10, B = 26;
+    const bw = (W - L - R) / weeks.length;
+    const y = (v) => T + (H - T - B) * (1 - v / top);
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Messages per week, DMARC pass and fail">';
+    for (let v = 0; v <= top; v += step) {
+      svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + fmt(v) + '</text>';
+    }
+    const labelEvery = Math.max(1, Math.ceil(weeks.length / 8));
+    weeks.forEach(([t, b], i) => {
+      const x = L + i * bw + bw * 0.12, w = Math.max(1, bw * 0.76);
+      if (b.pass) svg += '<rect x="' + x + '" y="' + y(b.pass) + '" width="' + w + '" height="' + (y(0) - y(b.pass)) + '" fill="var(--pass)"><title>' + day(new Date(t)) + ': ' + fmt(b.pass) + ' pass</title></rect>';
+      if (b.fail) svg += '<rect x="' + x + '" y="' + y(b.pass + b.fail) + '" width="' + w + '" height="' + (y(b.pass) - y(b.pass + b.fail)) + '" fill="var(--fail)"><title>' + day(new Date(t)) + ': ' + fmt(b.fail) + ' fail</title></rect>';
+      if (i % labelEvery === 0) svg += '<text x="' + (L + i * bw + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) + '</text>';
+    });
+    el.innerHTML = svg + '</svg>';
+  }
+
+  function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+    const m = raw / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+  }
+
+  function group(rows, key) {
+    const m = new Map();
+    for (const r of rows) { const k = key(r); (m.get(k) || m.set(k, []).get(k)).push(r); }
+    return m;
+  }
+
+  function renderDomains(rows) {
+    const g = [...group(rows, (r) => r.from).entries()].map(([d, rs]) => [d, rs, sums(rs)]).sort((a, b) => b[2].msgs - a[2].msgs);
+    $('domains').innerHTML = '<thead><tr><th>Domain</th><th>Status</th><th class="num">Messages</th><th class="num">DMARC pass</th><th class="num">DKIM aligned</th><th class="num">No signature</th><th class="num">SPF aligned</th><th class="num">IPs</th></tr></thead><tbody>' +
+      (g.length ? g.map(([d, rs, s]) => {
+        const [k, l] = status(s);
+        return '<tr><td>' + esc(d) + '</td><td><span class="chip ' + k + '">' + l + '</span></td><td class="num">' + fmt(s.msgs) + '</td><td class="num">' + passBar(s.pass, s.msgs) + '</td><td class="num">' + pct(s.dkim, s.msgs).toFixed(1) + '%</td><td class="num">' + pct(s.unsigned, s.msgs).toFixed(1) + '%</td><td class="num">' + pct(s.spf, s.msgs).toFixed(1) + '%</td><td class="num">' + fmt(new Set(rs.map((r) => r.ip)).size) + '</td></tr>';
+      }).join('') : '<tr><td colspan="8" class="muted">No reports in this period.</td></tr>') + '</tbody>';
+  }
+
+  function renderCauses(rows) {
+    const panel = $('causePanel');
+    if (!state.has.cause) { panel.hidden = true; return; }
+    panel.hidden = false;
+    const g = [...group(rows, (r) => r.cause || '(none)').entries()].map(([c, rs]) => {
+      const msgs = rs.reduce((n, r) => n + r.count, 0);
+      const byDomain = [...group(rs, (r) => r.from).entries()]
+        .map(([d, ds]) => [d, ds.reduce((n, r) => n + r.count, 0)])
+        .sort((a, b) => b[1] - a[1]);
+      return { cause: c, msgs, byDomain };
+    }).sort((a, b) => b.msgs - a.msgs);
+    const total = g.reduce((n, x) => n + x.msgs, 0);
+    $('causes').innerHTML = '<thead><tr><th>Cause</th><th class="num">Messages</th><th class="num">Share</th><th>Domains</th></tr></thead><tbody>' +
+      (g.length ? g.map((x) => '<tr><td><span class="chip ' + causeKind(x.cause) + '">' + esc(x.cause) + '</span></td><td class="num">' + fmt(x.msgs) + '</td><td class="num">' + passBar(x.msgs, total, 'share') + '</td><td>' + x.byDomain.slice(0, 3).map(([d, n]) => esc(d) + ' <span class="muted">' + fmt(n) + '</span>').join(', ') + (x.byDomain.length > 3 ? ' <span class="muted">+' + (x.byDomain.length - 3) + '</span>' : '') + '</td></tr>').join('') : '<tr><td colspan="4" class="muted">No reports in this period.</td></tr>') + '</tbody>';
+  }
+
+  function renderSources(rows) {
+    const g = [...group(rows, (r) => r.from + '|' + r.ip).entries()].map(([, rs]) => {
+      const s = sums(rs);
+      const mode = (f) => { const c = group(rs, f); return [...c.entries()].sort((a, b) => sums(b[1]).msgs - sums(a[1]).msgs).map(([v]) => v).slice(0, 2).join(', '); };
+      const reason = mode((r) => r.reason).split(', ')[0] || '';
+      const comment = (rs.find((r) => r.reason === reason) || {}).reasonComment || '';
+      return { from: rs[0].from, ip: rs[0].ip, s, fail: s.msgs - s.pass, orgs: [...new Set(rs.map((r) => r.org))], last: new Date(Math.max(...rs.map((r) => r.end.getTime()))), dkimRes: mode((r) => r.dkimResult), spfRes: mode((r) => r.spfResult), cause: mode((r) => r.cause || '(none)'), disposition: mode((r) => r.disposition || '(none)'), reason, comment };
+    }).sort((a, b) => b.fail - a.fail || b.s.msgs - a.s.msgs);
+    const shown = g.slice(0, 60);
+    // New-column cells appear only when the file carries them, so a 2020
+    // twelve-column file renders exactly as before.
+    const showCause = state.has.cause, showDisp = state.has.disposition, showReason = state.has.reason;
+    const cols = 9 + (showCause ? 1 : 0) + (showDisp ? 1 : 0) + (showReason ? 1 : 0);
+    $('sources').innerHTML = '<thead><tr><th>Status</th><th>Domain</th><th>Source IP</th><th class="num">Messages</th><th class="num">Failed</th>' +
+      (showCause ? '<th>Cause</th>' : '') + (showDisp ? '<th>Disposition</th>' : '') + (showReason ? '<th>Override</th>' : '') +
+      '<th>DKIM result</th><th>SPF result</th><th>Reported by</th><th>Last report</th></tr></thead><tbody>' +
+      (shown.length ? shown.map((x) => {
+        const [k, l] = status(x.s);
+        return '<tr><td><span class="chip ' + k + '">' + l + '</span></td><td>' + esc(x.from) + '</td><td class="mono">' + esc(x.ip) + '</td><td class="num">' + fmt(x.s.msgs) + '</td><td class="num"' + (x.fail ? ' style="color:var(--fail);font-weight:600"' : '') + '>' + fmt(x.fail) + '</td>' +
+          (showCause ? '<td><span class="chip ' + causeKind(x.cause.split(', ')[0]) + '">' + esc(x.cause) + '</span></td>' : '') +
+          (showDisp ? '<td class="mono">' + esc(x.disposition) + '</td>' : '') +
+          (showReason ? '<td class="mono"' + (x.comment ? ' title="' + esc(x.comment) + '"' : '') + '>' + esc(x.reason) + '</td>' : '') +
+          '<td class="mono">' + esc(x.dkimRes) + '</td><td class="mono">' + esc(x.spfRes) + '</td><td>' + esc(x.orgs.slice(0, 3).join(', ')) + (x.orgs.length > 3 ? ' +' + (x.orgs.length - 3) : '') + '</td><td class="mono">' + day(x.last) + '</td></tr>';
+      }).join('') : '<tr><td colspan="' + cols + '" class="muted">No reports in this period.</td></tr>') + '</tbody>';
+    $('sourcesNote').textContent = g.length > shown.length ? 'Showing the first ' + shown.length + ' of ' + fmt(g.length) + ' domain and IP pairs.' : fmt(g.length) + ' domain and IP pairs.';
+  }
+
+  function renderQuality() {
+    const el = $('quality');
+    if (!state.bad.length) { el.innerHTML = '<p class="muted" style="margin:0">Every row of the ' + fmt(state.total) + ' in the file was usable.</p>'; $('qualityPanel').classList.remove('problem'); return; }
+    $('qualityPanel').classList.add('problem');
+    el.innerHTML = '<p style="margin:0 0 8px">' + fmt(state.bad.length) + ' of ' + fmt(state.total) + ' rows were set aside and are not in any figure above. Truncated values such as <span class="mono">"pas"</span> usually mean two reports were appended to the file at the same moment.</p><div class="scroll"><table><thead><tr><th class="num">Line</th><th>Problem</th></tr></thead><tbody>' +
+      state.bad.slice(0, 25).map((b) => '<tr><td class="num mono">' + b.line + '</td><td>' + esc(b.why) + '</td></tr>').join('') + '</tbody></table></div>' + (state.bad.length > 25 ? '<p class="muted" style="margin:8px 0 0">and ' + fmt(state.bad.length - 25) + ' more.</p>' : '');
+  }
+
+  // Invented rows for two placeholder domains, deterministic so the example never moves.
+  // Wide rows in the current 29-column layout, with at least one row per
+  // failureCause label so every panel has something to show.
+  function exampleCsv() {
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const orgs = ['google.com', 'Outlook.com', 'Yahoo', 'GMX'];
+    const header = [...REQUIRED, 'reportId', 'policyDomain', 'policyP', 'policySp', 'policyPct', 'policyAdkim', 'policyAspf', 'disposition', 'reasonType', 'reasonComment', 'dkimSelector', 'dkimAll', 'spfScope', 'spfAll', 'dkimAligned', 'spfAligned', 'failureCause'];
+    const lines = [header.join(',')];
+    const latest = Date.UTC(2026, 9, 9, 23, 59, 59);
+    const at = (d) => { const end = new Date(latest - d * 864e5); return { begin: new Date(end.getTime() - 864e5 + 1000).toISOString(), end: end.toISOString() }; };
+    const row = (v) => lines.push(header.map((k) => v[k] ?? '').join(','));
+    const base = (org, d, from) => ({ orgName: org, ...at(d), headerFrom: from, reportId: org + '-day-' + d, policyDomain: from, policyP: 'quarantine', policySp: '', policyPct: '100', policyAdkim: 'r', policyAspf: 'r', disposition: 'none', reasonType: '', reasonComment: '' });
+    for (let d = 0; d < 120; d++) {
+      for (const org of orgs) {
+        if (rnd() < 0.55) row({ ...base(org, d, 'example.app'), sourceIp: '203.0.113.25', count: String(1 + Math.floor(rnd() * 9)), dkim: 'pass', spf: 'pass', dkim_domain: 'example.app', dkim_result: 'pass', spf_domain: 'example.app', spf_result: 'pass', dkimSelector: 's1', dkimAll: 'example.app:s1:pass', spfScope: 'mfrom', spfAll: 'example.app:mfrom:pass', dkimAligned: 'true', spfAligned: 'true', failureCause: 'ok' });
+        if (rnd() < 0.35) row({ ...base(org, d, 'example.net'), sourceIp: '198.51.100.7', count: String(1 + Math.floor(rnd() * 5)), dkim: 'fail', spf: 'pass', dkim_domain: '(absent)', dkim_result: 'none', spf_domain: 'example.net', spf_result: 'pass', dkimSelector: '', dkimAll: '', spfScope: 'mfrom', spfAll: 'example.net:mfrom:pass', dkimAligned: '', spfAligned: 'true', failureCause: 'ok' });
+      }
+      if (rnd() < 0.12) row({ ...base('google.com', d, 'example.app'), sourceIp: '192.0.2.' + (40 + Math.floor(rnd() * 20)), count: String(1 + Math.floor(rnd() * 3)), dkim: 'fail', spf: 'fail', dkim_domain: '(absent)', dkim_result: 'none', spf_domain: 'example.app', spf_result: 'softfail', dkimSelector: '', dkimAll: '', spfScope: 'mfrom', spfAll: 'example.app:mfrom:softfail', dkimAligned: '', spfAligned: '', failureCause: 'spf-not-listed', disposition: 'quarantine' });
+      if (rnd() < 0.08) row({ ...base('Outlook.com', d, 'example.net'), sourceIp: '203.0.113.88', count: '1', dkim: 'pass', spf: 'fail', dkim_domain: 'example.net', dkim_result: 'pass', spf_domain: 'example.net', spf_result: 'fail', dkimSelector: 's1', dkimAll: 'example.net:s1:pass', spfScope: 'mfrom', spfAll: 'example.net:mfrom:fail', dkimAligned: 'true', spfAligned: '', failureCause: 'ok' });
+    }
+    // One crafted row per remaining cause label, on fixed days and IPs.
+    const showcase = [
+      { ...base('google.com', 3, 'example.app'), sourceIp: '192.0.2.70', count: '4', dkim: 'fail', spf: 'fail', dkim_domain: 'example.app', dkim_result: 'fail', spf_domain: 'example.app', spf_result: 'fail', dkimSelector: 's1', dkimAll: 'example.app:s1:fail', spfScope: 'mfrom', spfAll: 'example.app:mfrom:fail', dkimAligned: '', spfAligned: '', failureCause: 'forwarded', reasonType: 'forwarded', reasonComment: 'mailing list expansion' },
+      { ...base('Outlook.com', 9, 'example.net'), sourceIp: '198.51.100.44', count: '2', dkim: 'fail', spf: 'fail', dkim_domain: 'example.net', dkim_result: 'pass', spf_domain: 'example.net', spf_result: 'fail', dkimSelector: 's1', dkimAll: 'example.net:s1:pass', spfScope: 'mfrom', spfAll: 'example.net:mfrom:fail', dkimAligned: 'true', spfAligned: '', failureCause: 'verdict-differs', disposition: 'quarantine' },
+      { ...base('Yahoo', 15, 'example.app'), sourceIp: '203.0.113.90', count: '3', dkim: 'fail', spf: 'fail', dkim_domain: 'example.app', dkim_result: 'temperror', spf_domain: 'example.app', spf_result: 'neutral', dkimSelector: '', dkimAll: 'example.app::temperror', spfScope: 'helo', spfAll: 'example.app:helo:neutral', dkimAligned: '', spfAligned: '', failureCause: 'temperror' },
+      { ...base('GMX', 21, 'example.app'), sourceIp: '192.0.2.91', count: '6', dkim: 'fail', spf: 'fail', dkim_domain: 'esp.example.net', dkim_result: 'pass', spf_domain: 'example.app', spf_result: 'fail', dkimSelector: 'news1', dkimAll: 'esp.example.net:news1:pass', spfScope: 'mfrom', spfAll: 'example.app:mfrom:fail', dkimAligned: 'false', spfAligned: '', failureCause: 'dkim-unaligned', disposition: 'quarantine' },
+      { ...base('google.com', 27, 'example.net'), sourceIp: '198.51.100.92', count: '5', dkim: 'fail', spf: 'fail', dkim_domain: 'example.net', dkim_result: 'fail', spf_domain: 'relay.example.org', spf_result: 'pass', dkimSelector: 's1', dkimAll: 'example.net:s1:fail', spfScope: 'mfrom', spfAll: 'relay.example.org:mfrom:pass', dkimAligned: '', spfAligned: 'false', failureCause: 'spf-unaligned', disposition: 'quarantine' },
+      { ...base('Outlook.com', 33, 'example.app'), sourceIp: '203.0.113.93', count: '2', dkim: 'fail', spf: 'fail', dkim_domain: 'example.app', dkim_result: 'fail', spf_domain: '(absent)', spf_result: 'none', dkimSelector: 's1', dkimAll: 'example.app:s1:fail', spfScope: '', spfAll: '', dkimAligned: '', spfAligned: '', failureCause: 'dkim-broken', disposition: 'quarantine' },
+      { ...base('Yahoo', 39, 'example.net'), sourceIp: '192.0.2.94', count: '9', dkim: 'fail', spf: 'fail', dkim_domain: '(absent)', dkim_result: 'none', spf_domain: '(absent)', spf_result: 'none', dkimSelector: '', dkimAll: '', spfScope: '', spfAll: '', dkimAligned: '', spfAligned: '', failureCause: 'unsigned', disposition: 'reject' },
+      { ...base('GMX', 45, 'example.app'), sourceIp: '198.51.100.95', count: '1', dkim: 'fail', spf: 'fail', dkim_domain: 'example.app', dkim_result: 'bogus', spf_domain: 'example.app', spf_result: 'none', dkimSelector: '', dkimAll: 'example.app::bogus', spfScope: '', spfAll: '', dkimAligned: '', spfAligned: '', failureCause: 'unrecognized', disposition: 'quarantine' },
+    ];
+    for (const v of showcase) row(v);
+    lines.push('google.com,2026-10-08T00:00:00.000Z,2026-10-08T23:59:59.000Z,203.0.113.25,2,pass,pas');
+    return lines.join('\r\n') + '\r\n';
+  }
+
+  function readFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => load(String(reader.result), file.name, '', false);
+    reader.onerror = () => { $('errorBox').hidden = false; $('errorBox').innerHTML = '<p class="error">The browser could not read ' + esc(file.name) + '. Try opening it again.</p>'; };
+    reader.readAsText(file);
+  }
+
+  $('file').addEventListener('change', (e) => readFile(e.target.files[0]));
+  $('loadExample').addEventListener('click', () => load(exampleCsv(), 'Example data', 'Invented rows for example.app and example.net, so the page shows what it does.', true));
+  const drop = $('drop');
+  ['dragenter', 'dragover'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((t) => document.addEventListener(t, (e) => { e.preventDefault(); if (t === 'drop' || e.target === document.documentElement) drop.classList.remove('over'); }));
+  document.addEventListener('drop', (e) => readFile(e.dataTransfer?.files?.[0]));
+  document.addEventListener('paste', (e) => {
+    const text = e.clipboardData?.getData('text');
+    if (text && text.startsWith('orgName,')) load(text, 'Pasted CSV', '', false);
+  });
+  $('domain').addEventListener('change', (e) => { state.domain = e.target.value; store.set('dmarc.domain', state.domain); render(); });
+  $('period').addEventListener('change', (e) => { state.period = Number(e.target.value); store.set('dmarc.period', e.target.value); render(); });
+
+  const p = store.get('dmarc.period');
+  if (p && [...$('period').options].some((o) => o.value === p)) { $('period').value = p; state.period = Number(p); }
+  load(exampleCsv(), 'Example data', 'Invented rows for example.app and example.net, so the page shows what it does.', true);
+})();
+</script>
+
+</body>
+</html>

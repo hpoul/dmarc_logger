@@ -1,0 +1,36 @@
+name: Publish Viewer
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ viewer/** ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check viewer script
+      run: |
+        python3 -c "import re; open('/tmp/viewer.js', 'w').write(re.search(r'<script>(.*)</script>', open('viewer/index.html').read(), re.S).group(1))"
+        node --check /tmp/viewer.js
+    - uses: actions/configure-pages@v5
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: viewer
+    - id: deploy
+      uses: actions/deploy-pages@v4

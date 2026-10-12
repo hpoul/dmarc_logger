@@ -105,6 +105,28 @@ produces it and what to do about it.
 | `unsigned` | Neither mechanism produced a signal. | Spoofing, or legitimate mail with no auth at all. | If legitimate, deploy SPF and DKIM; else it is working as intended. |
 | `unrecognized` | A result value outside the RFC set. | New reporter vocabulary. | Inspect `dkimAll`/`spfAll`; may need a mapping update. |
 
+## Viewer
+
+`viewer/index.html` is a self-contained page that reads the CSV in the
+browser: summary figures, a weekly pass/fail chart, per-domain and
+per-cause tables, a sources table with the failure cause on each row, and
+a panel listing rows it could not use. It opens on invented example data.
+This repo copy is the source; the same page is also published as a GitHub
+Pages site on every push to master that touches `viewer/`.
+
+To look at the live file:
+
+```
+scp services.tapo.at:dmarc/reports.csv .
+```
+
+then open `viewer/index.html` in a browser and drop the CSV onto it (or
+paste its contents). The file is parsed locally and never uploaded.
+
+The "Rows the viewer could not use" panel doubles as a check on the
+locking fix: a file appended only by the new binary leaves that panel
+empty. Any row listed there predates the fix or was written around it.
+
 ## Building
 
 1. Install Dart 3 (SDK constraint `^3.13.0`).
