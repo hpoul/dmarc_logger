@@ -157,4 +157,26 @@ void main() {
       );
     });
   });
+
+  group('example mails', () {
+    // MIME boundaries need CRLF; git once normalized two fixtures to LF,
+    // which stayed green locally (CRLF worktree) and failed on CI. Pin the
+    // line endings so a renormalization breaks here instead of downstream.
+    test('use CRLF line endings end to end', () {
+      for (final name in ['mail1.eml', 'mail2.eml', 'mail3.eml', 'mail4.eml']) {
+        final bytes = exampleMail(name);
+        final bare = <int>[];
+        for (var i = 0; i < bytes.length; i++) {
+          final isLf = bytes[i] == 0x0a;
+          final prevIsCr = i > 0 && bytes[i - 1] == 0x0d;
+          final isCr = bytes[i] == 0x0d;
+          final nextIsLf = i + 1 < bytes.length && bytes[i + 1] == 0x0a;
+          if ((isLf && !prevIsCr) || (isCr && !nextIsLf)) {
+            bare.add(i);
+          }
+        }
+        expect(bare, isEmpty, reason: '$name has bare line breaks');
+      }
+    });
+  });
 }
