@@ -20,7 +20,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check viewer script
+      run: |
+        python3 -c "import re; open('/tmp/viewer.js', 'w').write(re.search(r'<script>(.*)</script>', open('viewer/index.html').read(), re.S).group(1))"
+        node --check /tmp/viewer.js
+
   deploy:
+    # PRs only run the script check above; there is no Pages site to
+    # configure on a pull request, so the deploy runs from master alone.
+    if: github.ref == 'refs/heads/master'
+    needs: check
     runs-on: ubuntu-latest
 
     environment:
@@ -29,14 +43,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Check viewer script
-      run: |
-        python3 -c "import re; open('/tmp/viewer.js', 'w').write(re.search(r'<script>(.*)</script>', open('viewer/index.html').read(), re.S).group(1))"
-        node --check /tmp/viewer.js
     - uses: actions/configure-pages@v5
     - uses: actions/upload-pages-artifact@v3
       with:
         path: viewer
     - id: deploy
-      if: github.ref == 'refs/heads/master'
       uses: actions/deploy-pages@v4
