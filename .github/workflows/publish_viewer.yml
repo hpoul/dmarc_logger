@@ -13,9 +13,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  # PR checks may cancel each other, but never a production deploy.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+  # One group per ref: PR checks cancel each other, production deploys
+  # serialize on master, and the two never share a group, so a PR run
+  # can neither cancel nor queue behind a production deploy.
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
