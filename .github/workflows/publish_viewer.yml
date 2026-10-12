@@ -13,9 +13,9 @@ permissions:
   id-token: write
 
 concurrency:
-  # One group per ref: PR checks cancel each other, production deploys
-  # serialize on master, and the two never share a group, so a PR run
-  # can neither cancel nor queue behind a production deploy.
+  # One group per ref, so a PR run can never cancel a production deploy.
+  # Within one ref a newer run supersedes the running one; across refs
+  # (master vs any PR, PR vs PR) runs are independent.
   group: pages-${{ github.ref }}
   cancel-in-progress: true
 
