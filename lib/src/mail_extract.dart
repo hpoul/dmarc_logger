@@ -134,8 +134,9 @@ bool _isFeedback(Uint8List bytes) {
 }
 
 extension on MimePart {
-  // A switch even for one arm: the house rule bans == on enums, and a
-  // future enough_mail case still lands in the wildcard on purpose.
+  // A switch even for one arm, per the codebase convention of deciding on
+  // enums by switching (see dmarc_model.dart): a future enough_mail case
+  // still lands in the wildcard on purpose.
   bool get isMultipart => switch (mediaType.top) {
     MediaToptype.multipart => true,
     _ => false,
